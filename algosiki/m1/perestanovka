@@ -1,0 +1,51 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <stdlib.h>
+void swap(int* ptr1, int* ptr2)
+{
+	int temp = *ptr1;
+	*ptr1 = *ptr2;
+	*ptr2 = temp;
+}
+int* poisk(int* ptr,int kol,int I) 
+{
+	for (int j = 0; j < kol; j++)
+	{
+		if (*(ptr+j) == I) return ptr+j;
+	}
+	return NULL;
+}
+int perest(int *ar1,int *ar2,int n)
+{
+
+	for (int i = 0; i < n; i++)
+	{
+		if (poisk(ar2+i,n-i,*(ar1+i)) == NULL) return 0;
+		else { swap(ar2 + i, poisk(ar2 + i, n - i, *(ar1 + i)));}
+	}
+	return 1;
+}
+
+
+int main()
+{
+	int n;
+	printf("Введите размеры массивов:\n");
+	scanf("%d", &n);
+	int *ar1 = (int*)calloc(n, sizeof(int)), *ar2 = (int*)calloc(n, sizeof(int));
+	printf("Введите %d элементов для первого массива:\n",n);
+	for (int i = 0; i < n; i++) scanf("%d", ar1+i);
+	printf("Введите %d элементов для второго массива:\n",n);
+	for (int i = 0; i < n; i++) scanf("%d", ar2+i);
+
+	if (perest(ar1,ar2,n) == 1) printf("yes");
+	else printf("no");
+
+
+
+	printf("\n");
+	for (int i = 0; i < n;i++) printf("%d ",*(ar1+i));
+	printf("\n");
+	for (int i = 0; i < n; i++) printf("%d ", *(ar2 + i));
+
+}
