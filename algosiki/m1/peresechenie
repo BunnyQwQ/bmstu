@@ -1,0 +1,30 @@
+#include <stdio.h>
+
+int main()
+{
+    int n1,n2;
+    scanf("%d %d",&n1,&n2);
+	int ar1[n1], ar2[n2];
+	int peres[(n1>n2)?n1:n2];
+	int *ptr=peres;
+	int count1 = 0, count2 = 0;
+	printf("Введите элементы первого множества:\n");
+	while (count1 < n1 ) {scanf("%d", &ar1[count1]);count1++;}
+	printf("Введите элементы второго множества:\n");
+	while (count2 < n2 ) {scanf("%d", &ar2[count2]);count2++;}
+
+	for (int i=0;i<count1;i++)
+	{
+	    for (int j=0;j<count2;j++)
+	    {
+	        if (ar1[i]==ar2[j])
+	        {
+	            *ptr++=ar1[i];
+	            break;
+	        }
+	    }
+	}
+	int *outptr=peres;
+	while (outptr!=ptr) printf("%d ",*outptr++);
+	return 0;
+}
