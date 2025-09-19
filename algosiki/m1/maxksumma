@@ -1,0 +1,56 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <stdlib.h>
+int max_okno(int* ar, int n, int k)
+{
+	int ok=0;
+	for (int i = 0; i < k; i++) ok += *(ar + i);
+	int max = ok;
+	for (int i = 0; i + k < n; i++)
+	{
+		ok = ok + *(ar + i + k) - *(ar + i);
+		if (ok > max) max = ok;
+	}
+	return max;
+}
+
+
+
+
+int max_pref(int* ar, int n, int k)
+{
+	int* sum = (int*)calloc(n, sizeof(int));
+	*sum = *ar;
+//	printf("%d ", *sum );
+	for (int i = 1;i<n;i++)
+	{
+		*(sum + i) = *(sum+i-1) + *(ar + i);
+//		printf("%d ", *(sum+i));
+	}
+
+	int max = sum[k - 1];
+	for (int i = 0; i + k < n; i++)
+	{
+		if (sum[k + i] - sum[i] > max) max = sum[k + i] - sum[i];
+	}
+	return max;
+}
+
+int main()
+{
+	int n;
+	printf("Введите длину массива:\n");
+	scanf("%d", &n);
+	printf("Введите %d элементов массива\n", n);
+	int* ar = (int*)calloc(n,sizeof(int));
+	for (int i = 0; i < n; i++) scanf("%d", ar + i);
+	printf("Введите количество элементов суммы:\n");
+
+	int k;
+	scanf("%d", &k);
+
+
+
+	printf("Максимальное значение полученное окошком: %d\n",max_okno(ar,n,k));
+	printf("\nМаксимальное значение полученное префиксной суммой: %d", max_pref(ar, n, k));
+}
