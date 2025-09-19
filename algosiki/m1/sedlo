@@ -1,0 +1,110 @@
+/*
+
+Neinteresniy sposob
+
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <stdlib.h>
+
+int main()
+{
+	int n, m;
+	int min;
+	int max;
+	int id;
+	printf("Введите кол-во строк:\n");
+	scanf("%d", &n);
+
+	printf("Введите кол-во столбцов:\n");
+	scanf("%d", &m);
+	printf("Введите элементы массива\n");
+	int* ar = (int*)calloc(n * m, sizeof(int));
+	for (int i = 0; i < n; i++)
+		for (int j = 0; j < m; j++) scanf("%d",ar+i*m+j);
+
+	for (int i = 0; i < n; i++)
+	{
+		min = *(ar + i * m);
+		id = 0;
+		for (int j = 1; j < m; j++)
+		{
+			if (*(ar+i*m+j)<min) 
+			{
+				min = *(ar + i * m + j);
+				id = j;
+			}
+		}
+		max = *(ar + id);
+		for (int z = 0; z < n; z++)
+		{
+			if (*(ar + z * m + id) > max) max = *(ar + z * m + id);
+		}
+		if (min == max) printf("строка %d столбец %d: %d\n",i+1,id+1,min);
+	}
+}
+*/
+
+
+
+//interesniy sposob
+
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <stdlib.h>
+
+int main()
+{
+	int n, m;
+	int min;
+	int max;
+	int id;
+	printf("Введите кол-во строк:\n");
+	scanf("%d", &n);
+
+	printf("Введите кол-во столбцов:\n");
+	scanf("%d", &m);
+	printf("Введите элементы массива\n");
+	int* ar = (int*)calloc(n * m, sizeof(int));
+	for (int i = 0; i < n; i++)
+		for (int j = 0; j < m; j++) scanf("%d",ar+i*m+j);
+	int *mi = (int*)calloc(n,sizeof(int));
+	int *ma = (int*)calloc(m,sizeof(int));
+	for (int i = 0; i < n; i++)
+	{
+		min = *(ar + i * m);
+		for (int j = 1; j < m; j++)
+		{
+			if (*(ar + i * m+j) < min) min = *(ar + i * m+j);
+		}
+		*(mi + i) = min;
+	}
+
+
+
+	for (int j = 0; j < m; j++)
+	{
+		max = *(ar + j );
+		for (int i = 1; i < n; i++)
+		{
+			if (*(ar + i * m+j) > max) max = *(ar + i * m+j);
+		}
+		*(ma + j) = max;
+	}
+
+	printf("вектор min:\n");
+	for (int i = 0; i < n; i++) printf("%d ", *(mi + i));
+	printf("\n");
+	printf("вектор max:\n");
+	for (int i = 0; i < m; i++) printf("%d ", *(ma + i));
+	printf("\n");
+
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = 0; j < m; j++)
+		{
+			if (mi[i] == ma[j]) printf("строка %d столбец %d: %d\n", i + 1, j + 1, mi[i]);
+		}
+	}
+}
+
+*/
