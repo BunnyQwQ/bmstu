@@ -1,0 +1,38 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <math.h>
+#include <stdlib.h>
+
+int poisk(int *ar, int x, int n)
+{
+	for (int j = n / 2; j > 0; j--)
+	{
+		if (ar[j] == 0 && x% j == 0) return j;
+	}
+	return -1;
+}
+
+int main()
+{
+	int x;
+	printf("Введите число:\n");
+	scanf("%d", &x);
+	x = abs(x);
+	if (x < 2) { printf("нет простых делителей!!!"); return 0; }
+	int n = x+1;
+	printf("%d\n", n);
+	int* ar = (int*)calloc(n, sizeof(int));
+	for (int i = 2; i < n/2+1; i++)
+	{
+		if (ar[i] == 0)
+		{
+			for (int j = 2 * i; j < n; j += i) ar[j] = 1;
+		}
+	}
+	printf("Решето Эратосфена:\n");
+	for (int i = 0; i < n; i++) printf("%d %d\n",i, ar[i]);
+	printf("\n");
+	printf("Наибольший простой делитель:\n");
+	if (ar[x] == 0) printf("%d", x);
+	else printf("%d", poisk(ar, x, n));
+}
