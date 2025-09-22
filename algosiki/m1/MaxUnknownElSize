@@ -1,0 +1,55 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <stdlib.h>
+int srav(char* ptr1, char* ptr2, int width)
+{
+	for (int j = 0; j < width; j++)
+	{
+		if (*(ptr1 + j) > *(ptr2 + j)) {
+			printf("%d: [%c] > [%c] (1)",j, *(ptr1 + j), *(ptr2 + j));  return 1;
+		}
+		if (*(ptr1 + j) < *(ptr2 + j)) {
+			printf("%d: [%c]  > [%c] (-1)",j, *(ptr1 + j), *(ptr2 + j)); return -1;
+		}
+	}
+	return 0;
+}
+
+
+
+int main()
+{
+	int n,width;
+	int buf;
+	printf("Введите количество элементов массива и размера элемента в байтах\n");
+	scanf("%d %d", &n,&width);
+	char* ar = (char*)calloc(n, width);
+	printf("Введите элементы массива по байтово\n");
+	getchar();
+	for (int i=0; i < n * width; i++)
+	{
+		scanf("%c", ar+i);
+		
+	}
+	for (int i = 0; i < n; i++)
+	{
+		printf("%d: ", i);
+		for (int j = 0; j < width; j++)
+			printf("%c ", *(ar + i * width + j));
+		printf("\n");
+	}
+	printf("\n");
+
+	int ind = 0;
+	for (int i = 1; i < n; i++)
+	{
+		
+		if (srav(ar + i * width, ar + ind * width, width) == 1)
+		{
+			ind = i; printf(" smena ind na %d ", ind);
+		}
+		printf("\n");
+	}
+	printf("\n");
+	printf("%d", ind);
+}
