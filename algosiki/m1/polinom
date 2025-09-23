@@ -1,1 +1,78 @@
 
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h> 
+#include <stdlib.h>
+int main()
+{
+	int n;
+	int x;
+	int buf;
+	printf("Введите n:\n");
+	scanf("%d", &n);
+	printf("Введите x:\n");
+	scanf("%d",&x);
+	int* mp = (int*)calloc(n,sizeof(int));
+	int* ar = mp;
+	if (n >= 0)
+	{
+		printf("Введите коэффиценты:\n");
+		scanf("%d", &buf);
+		*ar++ = buf;
+		int s = buf;
+		int p = buf * n;
+		printf("polinom: ");
+		if (n > 0)
+		{
+
+			for (int i = 0; i < n - 1; i++) putchar('(');
+			printf("%d", buf);
+			scanf("%d", &buf);
+			*ar++ = buf;
+			s = s * x + buf;
+			printf("*x%+d", buf);
+			if (n > 1)
+			{
+				for (int i = n - 1; i > 0; i--)
+				{
+					scanf("%d", &buf);
+					*ar++ = buf;
+					s = s * x + buf;
+					printf(")*x%+d", buf);
+
+				}
+			}
+			printf(" = %d\n", s);
+			printf("proizvodnaya: ");
+			if (n > 1)
+			{
+
+
+
+
+				for (int i = 0; i < n - 2; i++) putchar('(');
+				ar = mp;
+				printf("%d", *ar++ * n);
+				p = p * x + *ar * (n - 1);
+				printf("*x%+d", *ar++ * (n - 1));
+				if (n > 2)
+				{
+					for (int i = n - 2; i > 0; i--)
+					{
+						p = p * x + *ar * i;
+						printf(")*x%+d", *ar++ * i);
+					}
+				}
+				printf(" = %d", p);
+				return 0;
+			}
+			
+			printf("%d = %d",p, p);
+			return 0;
+			
+		}
+		else printf("%d = %d\nproizvodnaya: 0",buf, buf);
+		return 0;
+	}
+	printf("UoU");
+	return 0;
+}
