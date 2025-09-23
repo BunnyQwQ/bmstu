@@ -1,0 +1,53 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <stdlib.h>
+void pick_check(int* ptr, int maxch,int ind,int * peak)
+{
+	for (int i = 1; i <= maxch;i++)
+	{
+		if (*(ptr + i) <= *ptr && *ptr >= *(ptr - i)) (peak[ind])++;
+	}
+}
+int main()
+{
+	int n;
+	printf("Введите n:\n");
+	scanf("%d",&n);
+	int* dig = (int*)calloc(n, sizeof(int));
+	int* peak = (int*)calloc(n, sizeof(int));
+	printf("Введите элементы массива:\n");
+	for (int i = 0; i < n; i++) scanf("%d", dig + i);
+	for (int i = 1; i < n - 1; i++)
+	{
+		pick_check(dig + i, (i<n-i-1)?i:n-i-1, i , peak);
+	}
+	if (n > 1)
+	{
+		if (*dig >= dig[1])
+			(*peak)++;
+		if (dig[n - 1] >= dig[n - 2])
+			peak[n - 1]++;
+	}
+	int height = 0;
+	for (int i = 0; i < n; i++)
+	{
+		if (peak[i] > height) height = peak[i];
+		printf("%d ", peak[i]);
+	}
+	printf("\n\n");
+	
+	for (int i = height; i >= 0; i--)
+	{
+		for (int j = 0; j < n; j++)
+		{
+			if (peak[j] < i) printf(" ");
+			else if (peak[j] > i) printf("0");
+			else printf("^");
+		}
+		printf("\n");
+	}
+	for (int j = 0; j < n; j++)
+	{
+		printf("-");
+	}
+}
