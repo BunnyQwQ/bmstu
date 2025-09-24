@@ -1,0 +1,77 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <string.h>
+void bclear()
+{
+	int c;
+	while ((c = getchar()) != '\n' && c != EOF);
+}
+void vvod(int *pn , int *pm ,char * s, int v )
+{
+	if (scanf("%d %d %s",pn,pm,s) != 3)
+	{
+		bclear();
+		printf("format: <height> <width> <text> ");
+		for (int i = 0; i < v; i++) putchar('!');
+		putchar('\n');
+		vvod(pn, pm, s,v + 1);
+		return;
+	}
+
+	if (*pn < 3)
+	{
+		bclear();
+		printf("height should be > 2 ");
+		for (int i = 0; i <= v; i++) putchar('!');
+		putchar('\n');
+		vvod(pn, pm, s, v + 1);
+		return;
+	}
+	if (*pm < strlen(s) + 2)
+	{
+		bclear();
+		printf("text dont fit ");
+		for (int i = 0; i <= v; i++) putchar('!');
+		putchar('\n');
+		vvod(pn, pm, s, v + 1);
+		return;
+	}
+}
+
+
+
+
+int main()
+{
+	int n, m;
+	char s[100];
+	printf("Введите данные в формате:\n");
+	printf("<height> <width> <text>\n");
+	vvod(&n,&m,s,1);
+	putchar('\n');
+	for (int i = 0; i < m; i++) putchar('0');
+	putchar('\n');
+	for (int i = 1; i < (n-1)/2; i++)
+	{
+		putchar('0');
+		for (int j = 0; j < m - 2;j++) putchar(' ');
+		putchar('0');
+		putchar('\n');
+	}
+	putchar('0');
+	for (int j = 0; j < (m-2 - strlen(s))/2; j++) putchar(' ');
+	printf("%s",s);
+	for (int j = 0; j < (m-1-strlen(s))/2; j++) putchar(' ');
+	putchar('0');
+	putchar('\n');
+	for (int i = (n-1)/2+1; i < n-1; i++)
+	{
+		putchar('0');
+		for (int j = 0; j < m - 2; j++) putchar(' ');
+		putchar('0');
+		putchar('\n');
+	}
+	for (int i = 0; i < m; i++) putchar('0');
+	
+	return 0;
+}
