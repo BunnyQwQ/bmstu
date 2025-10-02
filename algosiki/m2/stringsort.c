@@ -1,13 +1,18 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 int main()
 {
-	char s[100];
+	int max_len;
+	printf("Enter max string size:\n");
+	scanf("%d",&max_len);
+	char* s = (char*)malloc(max_len);
+	getchar();//убираем символ оставшийся символ после scanf из stdin, чтобы fgets нормально работала
 	printf("Enter string:\n");
-	fgets(s, 100, stdin);
+	fgets(s, max_len, stdin);
 	char* pn = strpbrk(s,"\n ");
-	*pn = '\0';
+	if (pn != NULL) *pn = '\0';
 	int n = strlen(s);
 
 	//сортировка букв пузырьком
