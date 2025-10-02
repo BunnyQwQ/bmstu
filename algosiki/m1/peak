@@ -1,3 +1,4 @@
+// Я тут решил горы бахнуть, вам достаточно просто найти где пики, рисовать чето не нужно
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <stdlib.h>
