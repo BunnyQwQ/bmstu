@@ -35,6 +35,7 @@ void resizedset(dset *s,int new_cap)
 	{
 		printf("resize error\n");
 		s->slist = temp;
+		exit(1);
 	}
 }
 void Nulldset(dset* s)
