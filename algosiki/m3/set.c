@@ -202,4 +202,12 @@ int main()
 	showset(D);
 	dset* A = diffdset(N, M, "Amn");
 	showset(A);
+
+	Nulldset(M);
+	Nulldset(N);
+	Nulldset(U);
+	Nulldset(I);
+	Nulldset(D);
+	Nulldset(A);
+	free(M);free(N);free(U);free(I);free(D);free(A);
 }
