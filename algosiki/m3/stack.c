@@ -81,7 +81,6 @@ void free_stack(stack * s)
 		free(n);
 		n = temp;
 	}
-	free(s->top);
 	free(s);
 }
 int main()
