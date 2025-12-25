@@ -1,0 +1,154 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <ctype.h>
+#include <math.h>
+typedef struct NODE
+{
+	double data;
+	struct NODE* next;
+} node;
+
+typedef struct
+{
+	node* top;
+	int size;
+} stack;
+
+stack* init()
+{
+	stack* t = (stack*)malloc(sizeof(stack));
+	t->size = 0;
+	t->top = NULL;
+	return t;
+}
+bool is_empty(stack* s)
+{
+	return (s->size == 0);
+}
+void push(stack* s, double d)
+{
+	node* new_node = (node*)malloc(sizeof(node));
+	new_node->data = d;
+	new_node->next = s->top;
+	s->top = new_node;
+	s->size++;
+}
+double pop(stack* t)
+{
+	if (is_empty(t)) { printf("pop error. stack empty\n"); return 0; }
+	node* temp = t->top;
+	double v = temp->data;
+	t->top = temp->next;
+	t->size--;
+	free(temp);
+	return v;
+}
+
+double peek(stack* s)
+{
+	if (is_empty(s))
+	{
+		printf("peek error. stack empty\n"); return 0;
+	}
+	double v = s->top->data;
+	return v;
+}
+
+
+int get_size(stack* s)
+{
+	return s->size;
+}
+
+void print_stack(stack* s)
+{
+	if (is_empty(s)) { printf("stack empty\n"); return; }
+	node* temp = s->top;
+	while (temp != NULL)
+	{
+		printf("%f ", temp->data);
+		temp = temp->next;
+	}
+	putchar('\n');
+}
+void free_stack(stack* s)
+{
+	node* n = s->top;
+	node* temp;
+	while (n != NULL)
+	{
+		temp = n->next;
+		free(n);
+		n = temp;
+	}
+	free(s);
+}
+
+double ev(const char* str)
+{
+	stack* s = init();
+	const char* ptr = str;
+	double a, b;
+	while (*ptr!='\0')
+	{ 
+		if (isdigit(*ptr))
+		{
+			push(s,*ptr-'0');
+		}
+		else
+		{
+			if (*ptr=='+')
+			{
+				b = pop(s);
+				a = pop(s);
+				push(s, a + b);
+			}
+			else if (*ptr=='-')
+			{
+				b = pop(s);
+				a = pop(s);
+				push(s, a - b);
+			}
+			else if (*ptr=='/')
+			{ 
+				b = pop(s);
+				a = pop(s);
+				push(s, a / b);
+			}
+			else if (*ptr=='*')
+			{
+				b = pop(s);
+				a = pop(s);
+				push(s, a * b);
+			}
+			else if (*ptr=='^')
+			{
+				b = pop(s);
+				a = pop(s);
+				push(s, pow(a,b));
+			}
+			else
+			{
+				printf("error read! [%c]\n", *ptr);
+				exit(1);
+			}
+		}
+		ptr++;
+	}
+	return pop(s);
+}
+
+
+
+int main()
+{
+	printf("12+ : %f\n", ev("12+"));
+	printf("54- : %f\n", ev("54-"));
+	printf("34* : %f\n", ev("34*"));
+	printf("62/ : %f\n", ev("62/"));
+	printf("23^ : %f\n", ev("23^"));
+	printf("33*55*+ : %f\n", ev("33*55*+"));
+	printf("512+4*+3- : %f\n", ev("512+4*+3-"));
+	printf("72/ : %f\n", ev("72/"));
+}
