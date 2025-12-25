@@ -1,0 +1,181 @@
+#include <stdio.h>
+#include <stdint.h>
+
+// ==================== ПРОСТОЙ КОД ХЕММИНГА (7,4) ====================
+
+// Кодирование 4 бит в 7 бит Хемминга
+uint8_t hamming_encode(uint8_t data) {
+    // data содержит 4 бита: d1 d2 d3 d4
+    
+    // Извлекаем биты данных
+    uint8_t d1 = (data >> 3) & 1;
+    uint8_t d2 = (data >> 2) & 1;
+    uint8_t d3 = (data >> 1) & 1;
+    uint8_t d4 = data & 1;
+    
+    // Вычисляем контрольные биты
+    uint8_t p1 = d1 ^ d2 ^ d4;  // для битов 1,2,4
+    uint8_t p2 = d1 ^ d3 ^ d4;  // для битов 1,3,4
+    uint8_t p3 = d2 ^ d3 ^ d4;  // для битов 2,3,4
+    
+    // Собираем результат: p1 p2 d1 p3 d2 d3 d4
+    uint8_t result = 0;
+    result |= (p1 << 6);
+    result |= (p2 << 5);
+    result |= (d1 << 4);
+    result |= (p3 << 3);
+    result |= (d2 << 2);
+    result |= (d3 << 1);
+    result |= d4;
+    
+    return result;
+}
+
+// Декодирование 7 бит Хемминга в 4 бита данных с исправлением ошибок
+uint8_t hamming_decode(uint8_t code) {
+    // code содержит 7 бит: p1 p2 d1 p3 d2 d3 d4
+    
+    // Извлекаем все биты
+    uint8_t p1 = (code >> 6) & 1;
+    uint8_t p2 = (code >> 5) & 1;
+    uint8_t d1 = (code >> 4) & 1;
+    uint8_t p3 = (code >> 3) & 1;
+    uint8_t d2 = (code >> 2) & 1;
+    uint8_t d3 = (code >> 1) & 1;
+    uint8_t d4 = code & 1;
+    
+    // Проверяем контрольные суммы
+    uint8_t s1 = p1 ^ d1 ^ d2 ^ d4;  // должна быть 0
+    uint8_t s2 = p2 ^ d1 ^ d3 ^ d4;  // должна быть 0
+    uint8_t s3 = p3 ^ d2 ^ d3 ^ d4;  // должна быть 0
+    
+    // Если есть ошибка, исправляем её
+    if (s1 || s2 || s3) {
+        // Позиция ошибки = s3 s2 s1 в двоичном виде
+        uint8_t error_pos = (s3 << 2) | (s2 << 1) | s1;
+        
+        // Исправляем бит в нужной позиции
+        switch (error_pos) {
+            case 1: p1 ^= 1; break;   // Ошибка в p1
+            case 2: p2 ^= 1; break;   // Ошибка в p2
+            case 3: d1 ^= 1; break;   // Ошибка в d1
+            case 4: p3 ^= 1; break;   // Ошибка в p3
+            case 5: d2 ^= 1; break;   // Ошибка в d2
+            case 6: d3 ^= 1; break;   // Ошибка в d3
+            case 7: d4 ^= 1; break;   // Ошибка в d4
+        }
+    }
+    
+    // Возвращаем исправленные данные
+    uint8_t result = 0;
+    result |= (d1 << 3);
+    result |= (d2 << 2);
+    result |= (d3 << 1);
+    result |= d4;
+    
+    return result;
+}
+
+// Внести ошибку в один бит
+uint8_t make_error(uint8_t code, int bit_pos) {
+    // bit_pos: 1-7 (1 - самый левый бит, 7 - самый правый)
+    return code ^ (1 << (7 - bit_pos));
+}
+
+// Вывести число в двоичном виде
+void print_binary(uint8_t num, int bits) {
+    for (int i = bits - 1; i >= 0; i--) {
+        printf("%d", (num >> i) & 1);
+    }
+}
+
+// ==================== ГЛАВНАЯ ПРОГРАММА ====================
+
+int main() {
+    printf("=== ПРОСТОЙ КОД ХЕММИНГА (7,4) ===\n\n");
+    
+    // Пример 1: Основной принцип
+    printf("1. Кодирование данных:\n");
+    uint8_t data = 0b1010;  // 10 в десятичной
+    printf("   Данные:      ");
+    print_binary(data, 4);
+    printf(" (десятичное: %d)\n", data);
+    
+    uint8_t encoded = hamming_encode(data);
+    printf("   Код Хемминга: ");
+    print_binary(encoded, 7);
+    printf("\n   Формат: p1 p2 d1 p3 d2 d3 d4\n");
+    printf("   Значения: %d  %d  %d  %d  %d  %d  %d\n\n",
+           (encoded >> 6) & 1, (encoded >> 5) & 1,
+           (encoded >> 4) & 1, (encoded >> 3) & 1,
+           (encoded >> 2) & 1, (encoded >> 1) & 1,
+           encoded & 1);
+    
+    // Пример 2: Исправление ошибок
+    printf("2. Исправление одиночных ошибок:\n");
+    
+    // Массив ошибок в разные позиции
+    int errors[] = {1, 3, 5, 7};
+    
+    for (int i = 0; i < 4; i++) {
+        uint8_t corrupted = make_error(encoded, errors[i]);
+        uint8_t decoded = hamming_decode(corrupted);
+        
+        printf("   Ошибка в бите %d:\n", errors[i]);
+        printf("   Ошибочный код: ");
+        print_binary(corrupted, 7);
+        printf("\n   Исправленные данные: ");
+        print_binary(decoded, 4);
+        printf(" (правильно: %s)\n", decoded == data ? "ДА" : "НЕТ");
+    }
+    
+    // Пример 3: Тест нескольких значений
+    printf("\n3. Тест для всех чисел от 0 до 15:\n");
+    printf("   Данные -> Код -> +ошибка -> Исправлено\n");
+    
+    int correct = 0;
+    for (int i = 0; i < 16; i++) {
+        uint8_t original_data = i;
+        uint8_t code = hamming_encode(original_data);
+        
+        // Вносим ошибку в случайную позицию (1-7)
+        int error_pos = (i % 7) + 1;
+        uint8_t bad_code = make_error(code, error_pos);
+        
+        uint8_t fixed_data = hamming_decode(bad_code);
+        
+        if (original_data == fixed_data) correct++;
+        
+        if (i < 5) {  // Покажем только первые 5 примеров
+            printf("   ");
+            print_binary(original_data, 4);
+            printf(" -> ");
+            print_binary(code, 7);
+            printf(" -> ");
+            print_binary(bad_code, 7);
+            printf(" -> ");
+            print_binary(fixed_data, 4);
+            printf(" %s\n", original_data == fixed_data ? "OK" : "ERROR");
+        }
+    }
+    
+    printf("   ... (и еще 11 примеров)\n");
+    printf("   Верно исправлено: %d из 16\n", correct);
+    
+    // Пример 4: Двойная ошибка (НЕ исправляется)
+    printf("\n4. Двойная ошибка (не исправляется):\n");
+    uint8_t double_error = make_error(encoded, 2);  // Ошибка в бите 2
+    double_error = make_error(double_error, 5);     // Ошибка в бите 5
+    
+    uint8_t wrong_data = hamming_decode(double_error);
+    printf("   Код с двумя ошибками: ");
+    print_binary(double_error, 7);
+    printf("\n   Результат декодирования: ");
+    print_binary(wrong_data, 4);
+    printf("\n   Правильный ответ был: ");
+    print_binary(data, 4);
+    printf("\n   Совпадает: %s (ожидалось - НЕТ)\n", 
+           wrong_data == data ? "ДА" : "НЕТ");
+    
+    return 0;
+}
