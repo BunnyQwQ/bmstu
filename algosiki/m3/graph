@@ -1,0 +1,592 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <limits.h>
+
+// ==================== ОПРЕДЕЛЕНИЕ СТРУКТУР ====================
+
+// Узел для списка смежности
+typedef struct AdjListNode {
+    int dest;                  // Номер вершины назначения
+    struct AdjListNode* next;  // Указатель на следующий узел
+} AdjListNode;
+
+// Список смежности для одной вершины
+typedef struct AdjList {
+    AdjListNode* head;         // Указатель на голову списка
+} AdjList;
+
+// Структура графа
+typedef struct Graph {
+    int vertices;              // Количество вершин
+    AdjList* array;            // Массив списков смежности
+} Graph;
+
+// Структура для очереди (нужна для BFS)
+typedef struct Queue {
+    int front, rear, size;
+    unsigned capacity;
+    int* array;
+} Queue;
+
+// ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
+
+// Создание нового узла списка смежности
+AdjListNode* create_adj_list_node(int dest) {
+    AdjListNode* newNode = (AdjListNode*)malloc(sizeof(AdjListNode));
+    if (!newNode) {
+        printf("Ошибка выделения памяти!\n");
+        return NULL;
+    }
+    newNode->dest = dest;
+    newNode->next = NULL;
+    return newNode;
+}
+
+// Создание графа с заданным количеством вершин
+Graph* create_graph(int vertices) {
+    if (vertices <= 0) {
+        printf("Количество вершин должно быть положительным!\n");
+        return NULL;
+    }
+    
+    Graph* graph = (Graph*)malloc(sizeof(Graph));
+    if (!graph) {
+        printf("Ошибка выделения памяти для графа!\n");
+        return NULL;
+    }
+    
+    graph->vertices = vertices;
+    
+    // Создаем массив списков смежности
+    graph->array = (AdjList*)malloc(vertices * sizeof(AdjList));
+    if (!graph->array) {
+        printf("Ошибка выделения памяти для массива смежности!\n");
+        free(graph);
+        return NULL;
+    }
+    
+    // Инициализируем каждый список смежности как пустой
+    for (int i = 0; i < vertices; i++) {
+        graph->array[i].head = NULL;
+    }
+    
+    printf("Создан граф с %d вершинами (0..%d)\n", vertices, vertices-1);
+    return graph;
+}
+
+// Добавление ребра в неориентированный граф
+void add_edge_undirected(Graph* graph, int src, int dest) {
+    if (!graph || src < 0 || src >= graph->vertices || 
+        dest < 0 || dest >= graph->vertices) {
+        printf("Неверные параметры для добавления ребра!\n");
+        return;
+    }
+    
+    if (src == dest) {
+        printf("Петли не поддерживаются!\n");
+        return;
+    }
+    
+    // Добавляем ребро из src в dest
+    AdjListNode* newNode = create_adj_list_node(dest);
+    if (!newNode) return;
+    
+    // Вставляем в начало списка (для эффективности)
+    newNode->next = graph->array[src].head;
+    graph->array[src].head = newNode;
+    
+    // Так как граф неориентированный, добавляем ребро из dest в src
+    newNode = create_adj_list_node(src);
+    if (!newNode) return;
+    
+    newNode->next = graph->array[dest].head;
+    graph->array[dest].head = newNode;
+    
+    printf("Добавлено ребро: %d -- %d\n", src, dest);
+}
+
+// Добавление ребра в ориентированный граф
+void add_edge_directed(Graph* graph, int src, int dest) {
+    if (!graph || src < 0 || src >= graph->vertices || 
+        dest < 0 || dest >= graph->vertices) {
+        printf("Неверные параметры для добавления ребра!\n");
+        return;
+    }
+    
+    if (src == dest) {
+        printf("Петли не поддерживаются!\n");
+        return;
+    }
+    
+    // Добавляем ребро из src в dest
+    AdjListNode* newNode = create_adj_list_node(dest);
+    if (!newNode) return;
+    
+    newNode->next = graph->array[src].head;
+    graph->array[src].head = newNode;
+    
+    printf("Добавлено ребро: %d -> %d\n", src, dest);
+}
+
+// Проверка наличия ребра между вершинами
+bool has_edge(Graph* graph, int src, int dest) {
+    if (!graph || src < 0 || src >= graph->vertices || 
+        dest < 0 || dest >= graph->vertices) {
+        return false;
+    }
+    
+    AdjListNode* current = graph->array[src].head;
+    while (current) {
+        if (current->dest == dest) {
+            return true;
+        }
+        current = current->next;
+    }
+    return false;
+}
+
+// Вывод графа
+void print_graph(Graph* graph) {
+    if (!graph) {
+        printf("Граф не существует!\n");
+        return;
+    }
+    
+    printf("\n=== Структура графа ===\n");
+    printf("Количество вершин: %d\n", graph->vertices);
+    printf("Списки смежности:\n");
+    
+    for (int v = 0; v < graph->vertices; v++) {
+        printf("Вершина %d: ", v);
+        
+        AdjListNode* current = graph->array[v].head;
+        if (!current) {
+            printf("нет соседей");
+        } else {
+            while (current) {
+                printf("%d", current->dest);
+                if (current->next) {
+                    printf(" -> ");
+                }
+                current = current->next;
+            }
+        }
+        printf("\n");
+    }
+    printf("=======================\n");
+}
+
+// ==================== РЕАЛИЗАЦИЯ ОЧЕРЕДИ ====================
+
+// Создание очереди
+Queue* create_queue(unsigned capacity) {
+    Queue* queue = (Queue*)malloc(sizeof(Queue));
+    if (!queue) return NULL;
+    
+    queue->capacity = capacity;
+    queue->front = queue->size = 0;
+    queue->rear = capacity - 1;
+    queue->array = (int*)malloc(capacity * sizeof(int));
+    
+    if (!queue->array) {
+        free(queue);
+        return NULL;
+    }
+    
+    return queue;
+}
+
+// Проверка, пуста ли очередь
+bool is_queue_empty(Queue* queue) {
+    return (queue->size == 0);
+}
+
+// Проверка, полна ли очередь
+bool is_queue_full(Queue* queue) {
+    return (queue->size == queue->capacity);
+}
+
+// Добавление элемента в очередь
+void enqueue(Queue* queue, int item) {
+    if (is_queue_full(queue)) {
+        printf("Очередь переполнена!\n");
+        return;
+    }
+    
+    queue->rear = (queue->rear + 1) % queue->capacity;
+    queue->array[queue->rear] = item;
+    queue->size++;
+}
+
+// Удаление элемента из очереди
+int dequeue(Queue* queue) {
+    if (is_queue_empty(queue)) {
+        printf("Очередь пуста!\n");
+        return INT_MIN;
+    }
+    
+    int item = queue->array[queue->front];
+    queue->front = (queue->front + 1) % queue->capacity;
+    queue->size--;
+    
+    return item;
+}
+
+// Получение первого элемента без удаления
+int front(Queue* queue) {
+    if (is_queue_empty(queue)) {
+        return INT_MIN;
+    }
+    return queue->array[queue->front];
+}
+
+// Освобождение памяти очереди
+void free_queue(Queue* queue) {
+    if (queue) {
+        if (queue->array) {
+            free(queue->array);
+        }
+        free(queue);
+    }
+}
+
+// ==================== АЛГОРИТМ BFS ====================
+
+// BFS для невзвешенного графа (поиск в ширину)
+void bfs(Graph* graph, int start_vertex) {
+    if (!graph) {
+        printf("Граф не существует!\n");
+        return;
+    }
+    
+    if (start_vertex < 0 || start_vertex >= graph->vertices) {
+        printf("Неверная стартовая вершина!\n");
+        return;
+    }
+    
+    // Массив для отслеживания посещенных вершин
+    bool* visited = (bool*)malloc(graph->vertices * sizeof(bool));
+    if (!visited) {
+        printf("Ошибка выделения памяти!\n");
+        return;
+    }
+    
+    // Массив для расстояний от стартовой вершины
+    int* distance = (int*)malloc(graph->vertices * sizeof(int));
+    if (!distance) {
+        printf("Ошибка выделения памяти!\n");
+        free(visited);
+        return;
+    }
+    
+    // Массив для предшественников (для восстановления пути)
+    int* predecessor = (int*)malloc(graph->vertices * sizeof(int));
+    if (!predecessor) {
+        printf("Ошибка выделения памяти!\n");
+        free(visited);
+        free(distance);
+        return;
+    }
+    
+    // Инициализация
+    for (int i = 0; i < graph->vertices; i++) {
+        visited[i] = false;
+        distance[i] = -1;      // -1 означает "не достижима"
+        predecessor[i] = -1;   // -1 означает "нет предшественника"
+    }
+    
+    // Создаем очередь для BFS
+    Queue* queue = create_queue(graph->vertices);
+    if (!queue) {
+        printf("Ошибка создания очереди!\n");
+        free(visited);
+        free(distance);
+        free(predecessor);
+        return;
+    }
+    
+    // Начинаем с заданной вершины
+    visited[start_vertex] = true;
+    distance[start_vertex] = 0;
+    enqueue(queue, start_vertex);
+    
+    printf("\n=== BFS обход (стартовая вершина: %d) ===\n", start_vertex);
+    printf("Порядок обхода: ");
+    
+    int visited_count = 0;
+    
+    // Основной цикл BFS
+    while (!is_queue_empty(queue)) {
+        int current = dequeue(queue);
+        printf("%d ", current);
+        visited_count++;
+        
+        // Проходим по всем соседям текущей вершины
+        AdjListNode* neighbor = graph->array[current].head;
+        while (neighbor != NULL) {
+            int adj_vertex = neighbor->dest;
+            
+            // Если соседняя вершина еще не посещена
+            if (!visited[adj_vertex]) {
+                visited[adj_vertex] = true;
+                distance[adj_vertex] = distance[current] + 1;
+                predecessor[adj_vertex] = current;
+                enqueue(queue, adj_vertex);
+            }
+            
+            neighbor = neighbor->next;
+        }
+    }
+    
+    printf("\n\nРезультаты BFS:\n");
+    printf("Всего посещено вершин: %d из %d\n", visited_count, graph->vertices);
+    
+    // Вывод расстояний
+    printf("\nРасстояния от вершины %d:\n", start_vertex);
+    for (int i = 0; i < graph->vertices; i++) {
+        if (distance[i] != -1) {
+            printf("  До вершины %d: %d шагов", i, distance[i]);
+            
+            // Восстановление пути
+            if (i != start_vertex) {
+                printf(" (путь: ");
+                int path[graph->vertices];
+                int path_len = 0;
+                int current = i;
+                
+                // Восстанавливаем путь от i к start_vertex
+                while (current != -1) {
+                    path[path_len++] = current;
+                    current = predecessor[current];
+                }
+                
+                // Выводим путь в правильном порядке
+                for (int j = path_len - 1; j >= 0; j--) {
+                    printf("%d", path[j]);
+                    if (j > 0) printf(" -> ");
+                }
+                printf(")");
+            }
+            printf("\n");
+        } else {
+            printf("  До вершины %d: недостижима\n", i);
+        }
+    }
+    
+    // Проверка на связность
+    if (visited_count == graph->vertices) {
+        printf("\nГраф СВЯЗНЫЙ (все вершины достижимы)\n");
+    } else {
+        printf("\nГраф НЕСВЯЗНЫЙ (не все вершины достижимы)\n");
+        printf("Недостижимые вершины: ");
+        for (int i = 0; i < graph->vertices; i++) {
+            if (!visited[i]) {
+                printf("%d ", i);
+            }
+        }
+        printf("\n");
+    }
+    
+    // Освобождение памяти
+    free(visited);
+    free(distance);
+    free(predecessor);
+    free_queue(queue);
+}
+
+// BFS с поиском кратчайшего пути между двумя вершинами
+void bfs_shortest_path(Graph* graph, int start, int end) {
+    if (!graph || start < 0 || start >= graph->vertices || 
+        end < 0 || end >= graph->vertices) {
+        printf("Неверные параметры!\n");
+        return;
+    }
+    
+    if (start == end) {
+        printf("Начальная и конечная вершины совпадают!\n");
+        return;
+    }
+    
+    bool* visited = (bool*)malloc(graph->vertices * sizeof(bool));
+    int* predecessor = (int*)malloc(graph->vertices * sizeof(int));
+    
+    if (!visited || !predecessor) {
+        printf("Ошибка выделения памяти!\n");
+        if (visited) free(visited);
+        if (predecessor) free(predecessor);
+        return;
+    }
+    
+    for (int i = 0; i < graph->vertices; i++) {
+        visited[i] = false;
+        predecessor[i] = -1;
+    }
+    
+    Queue* queue = create_queue(graph->vertices);
+    if (!queue) {
+        free(visited);
+        free(predecessor);
+        return;
+    }
+    
+    visited[start] = true;
+    enqueue(queue, start);
+    
+    bool found = false;
+    
+    while (!is_queue_empty(queue) && !found) {
+        int current = dequeue(queue);
+        
+        AdjListNode* neighbor = graph->array[current].head;
+        while (neighbor && !found) {
+            int adj_vertex = neighbor->dest;
+            
+            if (!visited[adj_vertex]) {
+                visited[adj_vertex] = true;
+                predecessor[adj_vertex] = current;
+                enqueue(queue, adj_vertex);
+                
+                if (adj_vertex == end) {
+                    found = true;
+                }
+            }
+            
+            neighbor = neighbor->next;
+        }
+    }
+    
+    if (found) {
+        printf("\nКратчайший путь от %d до %d найден!\n", start, end);
+        
+        // Восстановление пути
+        int path[graph->vertices];
+        int path_len = 0;
+        int current = end;
+        
+        while (current != -1) {
+            path[path_len++] = current;
+            current = predecessor[current];
+        }
+        
+        printf("Путь (%d шагов): ", path_len - 1);
+        for (int i = path_len - 1; i >= 0; i--) {
+            printf("%d", path[i]);
+            if (i > 0) printf(" -> ");
+        }
+        printf("\n");
+    } else {
+        printf("\nПуть от %d до %d не найден!\n", start, end);
+    }
+    
+    free(visited);
+    free(predecessor);
+    free_queue(queue);
+}
+
+// ==================== ОСВОБОЖДЕНИЕ ПАМЯТИ ====================
+
+// Освобождение памяти графа
+void free_graph(Graph* graph) {
+    if (!graph) return;
+    
+    if (graph->array) {
+        // Освобождаем все списки смежности
+        for (int i = 0; i < graph->vertices; i++) {
+            AdjListNode* current = graph->array[i].head;
+            while (current) {
+                AdjListNode* temp = current;
+                current = current->next;
+                free(temp);
+            }
+        }
+        free(graph->array);
+    }
+    
+    free(graph);
+    printf("Память графа освобождена\n");
+}
+
+// ==================== ТЕСТИРОВАНИЕ ====================
+
+int main() {
+    printf("=== Реализация невзвешенного графа и алгоритма BFS ===\n\n");
+    
+    // Пример 1: Небольшой связный граф
+    printf("Пример 1: Небольшой связный граф\n");
+    Graph* graph1 = create_graph(6);
+    
+    // Добавляем ребра для неориентированного графа
+    add_edge_undirected(graph1, 0, 1);
+    add_edge_undirected(graph1, 0, 2);
+    add_edge_undirected(graph1, 1, 3);
+    add_edge_undirected(graph1, 1, 4);
+    add_edge_undirected(graph1, 2, 4);
+    add_edge_undirected(graph1, 3, 5);
+    add_edge_undirected(graph1, 4, 5);
+    
+    print_graph(graph1);
+    
+    // BFS обход с разных стартовых вершин
+    bfs(graph1, 0);
+    bfs(graph1, 3);
+    
+    // Поиск кратчайшего пути
+    bfs_shortest_path(graph1, 0, 5);
+    bfs_shortest_path(graph1, 2, 3);
+    
+    free_graph(graph1);
+    
+    printf("\n\n");
+    
+    // Пример 2: Больший граф с несвязными компонентами
+    printf("Пример 2: Граф с несвязными компонентами\n");
+    Graph* graph2 = create_graph(8);
+    
+    // Первая компонента связности (вершины 0-3)
+    add_edge_undirected(graph2, 0, 1);
+    add_edge_undirected(graph2, 1, 2);
+    add_edge_undirected(graph2, 2, 3);
+    add_edge_undirected(graph2, 3, 0);
+    
+    // Вторая компонента связности (вершины 4-7)
+    add_edge_undirected(graph2, 4, 5);
+    add_edge_undirected(graph2, 5, 6);
+    add_edge_undirected(graph2, 6, 7);
+    
+    // Вершина 7 соединена с 4
+    add_edge_undirected(graph2, 7, 4);
+    
+    print_graph(graph2);
+    
+    // BFS обход
+    bfs(graph2, 0);
+    bfs(graph2, 4);
+    
+    // Поиск пути между разными компонентами
+    bfs_shortest_path(graph2, 0, 5);
+    
+    free_graph(graph2);
+    
+    printf("\n\n");
+    
+    // Пример 3: Ориентированный граф
+    printf("Пример 3: Ориентированный граф\n");
+    Graph* graph3 = create_graph(5);
+    
+    add_edge_directed(graph3, 0, 1);
+    add_edge_directed(graph3, 0, 2);
+    add_edge_directed(graph3, 1, 3);
+    add_edge_directed(graph3, 2, 4);
+    add_edge_directed(graph3, 3, 4);
+    
+    print_graph(graph3);
+    
+    bfs(graph3, 0);
+    bfs_shortest_path(graph3, 0, 4);
+    bfs_shortest_path(graph3, 1, 0);  // Путь не должен найтись
+    
+    free_graph(graph3);
+    
+    return 0;
+}
